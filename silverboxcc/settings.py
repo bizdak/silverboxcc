@@ -25,8 +25,7 @@ SECRET_KEY = 'w06wm_mfzk8hbc8%$d@ct_z@263m%aas41t!%=1-9d8*3vk2jp'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['49.51.137.120', 'localhost']
-
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -55,7 +54,7 @@ ROOT_URLCONF = 'silverboxcc.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR,'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
