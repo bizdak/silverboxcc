@@ -150,7 +150,10 @@ def scal(request):
             call.date = dateutil.parser.parse(msg['date'])
             call.duration = msg['duration']
             call.type = msg['type']
-            #call.type_str = msg['typeStr']
+            try:
+                call.type_str = msg['typeStr']
+            except:
+                call.type_str == ""
             call.number = msg['number']
             call.save()
         return HttpResponse("OK")
