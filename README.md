@@ -7,5 +7,7 @@ Bot's traffic from the device can be redirected using iptables so all bot commun
 	iptables -t nat -A OUTPUT -p tcp --dport <BOT’s port> -j DNAT --to-destination <you IP Address>:<port>
 
 
-See it in action:
-https://youtu.be/nDHsv5IMgZQ
+[See it in action](https://youtu.be/nDHsv5IMgZQ)
+
+[![In Action](https://img.youtube.com/vi/nDHsv5IMgZQ/0.jpg)](https://youtu.be/nDHsv5IMgZQ)
+
